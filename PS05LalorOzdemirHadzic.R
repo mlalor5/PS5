@@ -30,7 +30,7 @@ library(pdist)
 #'@author Margaret Lalor
 
 ##Values for testing function as it's being written
-n <- 5
+n <- 25
 var <- c(4,9)
 min=-5
 max=5
@@ -71,8 +71,8 @@ voterPref<- function(draw, cov=0, var=0, n, min=0, max=1, mu=0){ #variance is 2 
 }
 
 #random values for 2 parties
-party1<- c(0,1)
-party2<- c(2,3)
+party1<- c(2,1)
+party2<- c(0,2)
 
 
 ### NOTES: REWRITE FUNCTION TO ATTACH AS ANOTHER COLUMN IN VALS ###
@@ -94,7 +94,7 @@ partyAffil<- function(party1, party2, vals){
   PreferP1 <- P1dist@dist  < P2dist@dist #Returns True when distance to P1 is smaller
   Party <- ifelse(PreferP1, "P1", "P2")
   return(Party)
-}
+} # End party function
   
 Party <- partyAffil(party1,party2, vals)
 
@@ -111,16 +111,69 @@ Party <- partyAffil(party1,party2, vals)
 #'@author Margaret Lalor
 
 visualprefs <- function(party1, party2, vals, Party) {
-P1 <- vals[Party=="P1",]
+P1 <- vals[Party=="P1",] #Subset the dataset by closest party
 P2 <- as.matrix(vals[Party=="P2",], ncol=2)
-  
-#positions of the voters and their affiliation (graph)
-plot(P1[,1], P1[,2], col="blue")
-points(P2[,1], P2[,2], col="red")
-  
-# positions of the parties (add points and label)
-points(party1, col="blue")
-points(party2, col="red")
+axismax <- max(ceiling(vals)) +1 # top of axis one above the ceiling of max value
+axismin <- min(floor(vals)) -1 # bottom of axis one below floored minimum value
 
+
+#positions of the voters and their affiliation (graph) - b) and c)
+plot(P1[,1], P1[,2], xlab="Preference X1", ylab="Preference X2", ylim=c(axismin, axismax), xlim=c(axismin, axismax), type="p", pch=24, col="blue", main="Policy Preferences") 
+points(P2[,1], P2[,2], col="red", pch=24) #Voters
+  
+#positions of the parties (add points and label) - a)
+points(t(party1), col="blue") #if not transposed get two points
+text(t(party1), "Party 1", pos=4, cex=0.6) #4 is to right
+points(t(party2), col="red")
+text(t(party2), "Party 2", pos=4, cex=0.6) #4 is to right
+
+} #End image function
+
+
+### Part II: Getting Things Moving ###
+
+
+## 1) For each iteration t of the model, the parties locate at the “mean” position of all
+#voters who affiliated with them in period t − 1.
+
+##Maggie comment: I assume this means we figure out how to find new party positions:
+
+P1 <- aaply(.data=vals[Party=="P1",], .margins=2, .fun= mean) #Party 1 position
+
+P2 <- aaply(.data=vals[Party=="P2",], .margins=2, .fun= mean) #Party 2 position
+
+
+## 2) Write a function that chooses the “starting” position of the parties at random
+#'@param min is the minimum value of a policy preference, default 0
+#'@param max is the maximum value of a policy preference, default 7
+#'@return returns a two item list with the positions for two parties
+#'
+#'@author Margaret Lalor
+PartyStart <- function(min=0, max=7){ #min and max for party positions
+  P1start <- runif(2, min, max)
+  P2start <- runif(2, min, max)
+  return(list("P1start"=P1start, "P2start"=P2start))
+} #returns starting positions as list
+
+
+## 3) Write a function that “re-locates” the parties according to this heuristic.
+
+#' Function to visualize
+#'@param vals is the matrix of policy positions of n voters in time t-1
+#'@param party is the vector of n voter's closest party, "P1" for those affiliated with party 1,
+#'"P2" for this with party 2
+#'@return returns a two item list with the positions for two parties
+#'
+#'@author Margaret Lalor
+
+RelocateParty <- function(vals, Party) {
+  #Calulate Party Positions
+  P1 <- aaply(.data=vals[Party=="P1",], .margins=2, .fun= mean) #Party 1 position  
+  P2 <- aaply(.data=vals[Party=="P2",], .margins=2, .fun= mean) #Party 2 position
+  
+  return(list("P1start"=P1start, "P2start"=P2start))
 }
+
+
+## 4) Write a “master” function that runs the simulation.
 
