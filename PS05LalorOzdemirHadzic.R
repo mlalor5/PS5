@@ -34,9 +34,10 @@ n <- 25
 var <- c(4,9)
 min=-5
 max=5
+#Elif: Changed all min/max values to (-5,5) for ideological scales of parties, so we will have consistency. We may need to make changes in the voterPref function to have consistency with voter preferences as well. For example standard draw always have a sample between (0,1) as it is now.
 
 
-voterPref<- function(draw, cov=0, var=0, n, min=0, max=1, mu=0){ #variance is 2 vector, cov is variance-cov matrix
+voterPref<- function(draw, cov=0, var=0, n, min=-5, max=5, mu=0){ #variance is 2 vector, cov is variance-cov matrix
 
   #matrix of NAs to store preferences
   vals <- matrix(nrow=n, ncol=2)
@@ -59,20 +60,20 @@ voterPref<- function(draw, cov=0, var=0, n, min=0, max=1, mu=0){ #variance is 2 
   
   #draw from multivariate with specified variate-covariate
   if(draw=="multivariate" & cov != 0) {
-    vals <- matrix(mvrnorm(n=2*n, Sigma=cov) 
+    vals <- matrix(mvrnorm(n=2*n, Sigma=cov))
   }
   
   #draw from mixture of up to 3 multivariate normal distributions (where centered as well as var-cov matrix), just doens't want unimodal symmetric
   #can have the same variance-covariance matrix
   if(draw=="mixture" & cov != 0 & mu !=0) {
-    vals <- matrix(mvrnorm(n=2*n, Sigma=cov, mu=mu) 
+    vals <- matrix(mvrnorm(n=2*n, Sigma=cov, mu=mu))
   }
   return(vals)
 }
 
 #random values for 2 parties
-party1<- c(2,1)
-party2<- c(0,2)
+party1<- runif(2, min=-5, max=5)
+party2<- runif(2, min=-5, max=5)
 
 
 ### NOTES: REWRITE FUNCTION TO ATTACH AS ANOTHER COLUMN IN VALS ###
@@ -149,7 +150,7 @@ P2 <- aaply(.data=vals[Party=="P2",], .margins=2, .fun= mean) #Party 2 position
 #'@return returns a two item list with the positions for two parties
 #'
 #'@author Margaret Lalor
-PartyStart <- function(min=0, max=7){ #min and max for party positions
+PartyStart <- function(min=-5, max=5){ #min and max for party positions
   P1start <- runif(2, min, max)
   P2start <- runif(2, min, max)
   return(list("P1start"=P1start, "P2start"=P2start))
@@ -176,4 +177,48 @@ RelocateParty <- function(vals, Party) {
 
 
 ## 4) Write a “master” function that runs the simulation.
+#'Function to iterate simulation several times
+#'@param vals is the matrix of policy positions of n voters in time t-1
+#'@param min is the minimum value of a policy preference, default 0
+#'@param max is the maximum value of a policy preference, default 7
+#'@param sim is the number of iterations
 
+#Standard draw to test while writing the function 
+#vals<- matrix(rnorm(2*n, mean=0, sd=2), nrow=n, ncol=2)
+#sim<- 10
+
+masterSim<- function(min=-5, max=5, sim=10, vals){
+  #Party 1 and 2 starts by choosing a random position between 0 and 7 on 2 dimensional policy scale
+  P1start <- runif(2, min, max)
+  P2start <- runif(2, min, max)
+  #By the loop below, parties adjust their position according to their mean voter in previous elections and voters vote accordingly
+  P1<- P1start #matrix to store the evolution of P1's position
+  P2<- P2start #matrix to store the evolution of P2's position
+  PartyAff<- NULL #matrix to store the evolution of voter preferences
+  for (i in 1:sim){
+  #Voters cast their ballot to closest party by calculating distance
+  P1dist <- pdist(X=vals, Y=P1start)
+  P2dist <- pdist(X=vals, Y=P2start)
+  PreferP1 <- P1dist@dist  < P2dist@dist #Returns True when distance to P1 is smaller
+  Party <- ifelse(PreferP1, "P1", "P2")
+  #Parties relocate themselves
+  P1start <- aaply(.data=vals[Party=="P1",], .margins=2, .fun= mean) #Party 1 position  
+  P2start <- aaply(.data=vals[Party=="P2",], .margins=2, .fun= mean) #Party 2 position
+  P1<- rbind(P1, P1start) #P1's position shift in time
+  P2<- rbind(P2, P2start) #P2's position shift in time
+  PartyAff<- cbind(PartyAff, Party) #Change in voter prefereces in time
+  } #End loop
+  return(list("P1"=P1, "P2"=P2, "PartyAff"=PartyAff))
+} #End master simulation function
+
+## 5) Visualization of this process (which we will find helpful and FUN)
+#Elif: I did this as a seperate question not to slow down the simulation function in 4, but we can move this into the function above if you like.
+
+#To follow how parties changed their positions in time during the iterations
+
+for (i in 1:sim){
+plot(P1[i,1], P1[i,2], xlab="Preference X1", ylab="Preference X2", ylim=c(min,max), xlim=c(min,max), type="p", pch=24, col="blue", main="Policy Preferences")   
+points(P2[i,1], P2[i,2], col="red", pch=24)
+}
+
+#Elif: It would be also interesting to see the voters who changed their party preferences within this process but I couldn't think of a good way for this
