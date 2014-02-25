@@ -222,3 +222,4 @@ points(P2[i,1], P2[i,2], col="red", pch=24)
 }
 
 #Elif: It would be also interesting to see the voters who changed their party preferences within this process but I couldn't think of a good way for this
+#I agree
