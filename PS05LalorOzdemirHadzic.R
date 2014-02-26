@@ -36,6 +36,7 @@ min=-5
 max=5
 #Elif: Changed all min/max values to (-5,5) for ideological scales of parties, so we will have consistency. We may need to make changes in the voterPref function to have consistency with voter preferences as well. For example standard draw always have a sample between (0,1) as it is now.
 
+#Dino: Revising code for "multivariate" and "mixture" draws so that n x 2 matrix is created by function.
 
 voterPref<- function(draw, cov=0, var=0, n, min=-5, max=5, mu=0){ #variance is 2 vector, cov is variance-cov matrix
 
@@ -60,16 +61,19 @@ voterPref<- function(draw, cov=0, var=0, n, min=-5, max=5, mu=0){ #variance is 2
   
   #draw from multivariate with specified variate-covariate
   if(draw=="multivariate" & cov != 0) {
-    vals <- matrix(mvrnorm(n=2*n, Sigma=cov))
+    vals <- matrix(mvrnorm(n=2*n, Sigma=cov, mu=mu)) #mu argument added.
+    vals <- matrix(sample(vals), 2*n, nrow=n, ncol=2) #Added to create n x 2 matrix.
   }
   
   #draw from mixture of up to 3 multivariate normal distributions (where centered as well as var-cov matrix), just doens't want unimodal symmetric
   #can have the same variance-covariance matrix
   if(draw=="mixture" & cov != 0 & mu !=0) {
     vals <- matrix(mvrnorm(n=2*n, Sigma=cov, mu=mu))
+    vals <- matrix(sample(yo), 2*n, nrow=n, ncol=2) #Added to create n x 2 matrix.
   }
   return(vals)
 }
+
 
 #random values for 2 parties
 party1<- runif(2, min=-5, max=5)
