@@ -69,7 +69,7 @@ voterPref<- function(draw, cov=0, var=0, n, min=-5, max=5, mu=0){ #variance is 2
   #can have the same variance-covariance matrix
   if(draw=="mixture" & cov != 0 & mu !=0) {
     vals <- matrix(mvrnorm(n=2*n, Sigma=cov, mu=mu))
-    vals <- matrix(sample(yo), 2*n, nrow=n, ncol=2) #Added to create n x 2 matrix.
+    vals <- matrix(sample(vals), 2*n, nrow=n, ncol=2) #Added to create n x 2 matrix.
   }
   return(vals)
 }
