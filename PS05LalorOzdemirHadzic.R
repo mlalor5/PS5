@@ -114,15 +114,16 @@ Party <- partyAffil(party1,party2, vals)
 #'
 #'@author Margaret Lalor
 
-#Dino: changing xlim and ylim for visualprefs to c(-6,6). Othewise, when we plot positions, the parties will
-#occassionally not appear on the graph.
+#Dino: changing xlim and ylim for visualprefs to c(-6,8). Othewise, when we plot positions, the parties will
+#occassionally not appear on the graph. 8 is the uppper bound since when drawing from uniform distribution for voters, 
+#7 is the maximum value.
 
 visualprefs <- function(party1, party2, vals, Party) {
 P1 <- vals[Party=="P1",] #Subset the dataset by closest party
 P2 <- as.matrix(vals[Party=="P2",], ncol=2)
 
 #positions of the voters and their affiliation (graph) - b) and c)
-plot(P1[,1], P1[,2], xlab="Preference X1", ylab="Preference X2", ylim=c(-6, 6), xlim=c(-6, 6), type="p", pch=24, col="blue", main="Policy Preferences") 
+plot(P1[,1], P1[,2], xlab="Preference X1", ylab="Preference X2", ylim=c(-6, 8), xlim=c(-6, 8), type="p", pch=24, col="blue", main="Policy Preferences") 
 points(P2[,1], P2[,2], col="red", pch=24) #Voters
   
 #positions of the parties (add points and label) - a)
