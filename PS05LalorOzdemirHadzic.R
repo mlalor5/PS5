@@ -292,3 +292,86 @@ for (i in 1:nrow(P1)){
 }
 
 
+#Expand your model
+#1. Alter your model so that the number of parties is an optional input. How do your results
+#change as a result?
+
+#'@param min indicates the minimum preference value.
+#'@param max indicates the maximum preference value.
+#'@param rseed is the random seed for the function, which can be adjusted.
+#'@param draw indicates the type of distribution from  which voters' preferences are selected.
+#'@param n represents the number of voters being drawn.
+#'@param nparty is the number of parties, which can be adjusted.
+
+Mult_Parties <- function(min=0, max=7, rseed=7, draw="uniform", n=20, nparty=10){
+  set.seed(rseed)                                         #Sets the seed.
+  vals <- voterPref(draw=draw, n=n)                       #Draws voter preferences and stores them as vals.
+  
+  PartyPrefs <- matrix(nrow=nparty, ncol=2)                   
+  for(i in 1:nparty){
+    PartyPrefs[i,] <- runif(2, min=0, max=7)
+  } #This for loop stores preferences for a specified number of voters in PartyPrefs.
+  
+  Pdist <- list()
+  for(i in 1:nparty){
+    Pdist[i] <- pdist(X=vals, Y=PartyPrefs[i,])
+  } #Measures the distances between each voters and each party and stores it as Pdist.
+  
+  Prefmatrix <- matrix(nrow=nparty, ncol=nrow(vals))
+  for(i in 1:nparty){
+    Prefmatrix[i,] <- Pdist[[i]]@dist[1:nrow(vals)]
+  } #Creates a matrix called Prefmatrix which rows denoting the parties and columns voters. The cells represent the
+  #distances between a particular party and voter.
+  
+  for(i in 1:nrow(vals)){
+    Prefer[i] <- which(Prefmatrix[,i] == min(Prefmatrix[,i]))
+    PartyPrefer <- as.numeric(Prefer)
+  } #Creates a vector of the parties each voter most prefers and stores it as PartyPrefer.
+  
+  Prefmatrix <- rbind(Prefmatrix, PartyPrefer) #combines the Prefmatrix with PartyPrefer, stores it as Prefmatrix. The 
+  #bottom row of Prefmatrix denotes the party voter i prefers.
+  
+  return(Prefmatrix)
+}
+
+#Increasing the number of parties has an effect that is quite intuitive. The support for parties among voters
+#becomes more splintered, with the share of support each party receives from voters decreasing as we increase the 
+#number of parties.
+
+
+#2. Alter your model so that voters vote "probabilistically" as some function of the distance betwen the two parties. 
+#(That is, alow them to make the "wrong" decision if they are nearly indifference between the parties.) Do the
+#results change?
+
+#We can alter the model, masterSim2, from the previous section and create a new model named masterSim3. This new 
+#model permits "probabilistic" voting. All of the parameters remain unchanged, but we do add random noise to the 
+#distance between party 1 and the voters, conceptually similar to permitting voters to cast ballot "probabilistically."
+
+masterSim3<- function(min=0, max=7, sim=5, draw="standard", n=100, rseed=25){
+  set.seed(rseed)
+  vals<- voterPref(draw=draw, n=n)
+  P1start <- runif(2, min, max)
+  P2start <- runif(2, min, max)
+  P1<- P1start 
+  P2<- P2start 
+  for (i in 1:sim){
+    P1dist <- pdist(X=vals, Y=P1start)
+    P2dist <- pdist(X=vals, Y=P2start)
+    
+    P1dist@dist <- P1dist@dist + rnorm(n) #random noise added to simulate voters casting ballots "probabilistically." 
+    #The random noise generally shifts distances by a magnitude between 0.3 and 1.5. 
+    
+    PreferP1 <- P1dist@dist  < P2dist@dist 
+    Party <- ifelse(PreferP1, "P1", "P2")
+    P1start <- aaply(.data=vals[Party=="P1",], .margins=2, .fun= mean) 
+    P2start <- aaply(.data=vals[Party=="P2",], .margins=2, .fun= mean) 
+    P1<- rbind(P1, P1start) 
+    P2<- rbind(P2, P2start) 
+  } 
+  return(list("P1"=P1, "P2"=P2, "vals"=vals))
+} 
+
+#The results do not really change after permitting voters to cast ballots "probabilistically." This is likely due to the
+#fact that a party both gains and loses votes when "probabilistic" voting is introduced.  Ultimately, any policy 
+#preference changes parties make while permitting for such voting is minor.
+
