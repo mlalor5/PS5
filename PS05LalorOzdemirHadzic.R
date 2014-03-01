@@ -32,13 +32,13 @@ library(pdist)
 ##Values for testing function as it's being written
 n <- 25
 var <- c(4,9)
-min=-5
-max=5
-#Elif: Changed all min/max values to (-5,5) for ideological scales of parties, so we will have consistency. We may need to make changes in the voterPref function to have consistency with voter preferences as well. For example standard draw always have a sample between (0,1) as it is now.
+min=0
+max=7
+#Elif: Changed all min/max values to (0,7) for ideological scales of parties, so we will have consistency. We may need to make changes in the voterPref function to have consistency with voter preferences as well. For example standard draw always have a sample between (0,1) as it is now.
 
 #Dino: Revising code for "multivariate" and "mixture" draws so that n x 2 matrix is created by function.
 
-voterPref<- function(draw, cov=0, var=0, n, min=-5, max=5, mu=0){ #variance is 2 vector, cov is variance-cov matrix
+voterPref<- function(draw, cov=0, var=0, n, min=0, max=7, mu=0){ #variance is 2 vector, cov is variance-cov matrix
 
   #matrix of NAs to store preferences
   vals <- matrix(nrow=n, ncol=2)
@@ -46,7 +46,7 @@ voterPref<- function(draw, cov=0, var=0, n, min=-5, max=5, mu=0){ #variance is 2
   #x1, x2 are the two dimensions for a given voter's policy preferences
   if(draw=="standard"){
   #draw independently from standard normal distributions
-    vals<- matrix(rnorm(2*n), nrow=n, ncol=2)
+    vals<- matrix(rnorm(2*n, mean=4, sd=2), nrow=n, ncol=2)
   }
       
   #draw independently from normal distributions where each variance is set separately
@@ -154,7 +154,7 @@ P2 <- aaply(.data=vals[Party=="P2",], .margins=2, .fun= mean) #Party 2 position
 #'@return returns a two item list with the positions for two parties
 #'
 #'@author Margaret Lalor
-PartyStart <- function(min=-5, max=5){ #min and max for party positions
+PartyStart <- function(min=0, max=7){ #min and max for party positions
   P1start <- runif(2, min, max)
   P2start <- runif(2, min, max)
   return(list("P1start"=P1start, "P2start"=P2start))
@@ -187,12 +187,11 @@ RelocateParty <- function(vals, Party) {
 #'@param max is the maximum value of a policy preference, default 7
 #'@param sim is the number of iterations
 
-#Standard draw to test while writing the function 
-#vals<- matrix(rnorm(2*n, mean=0, sd=2), nrow=n, ncol=2)
-#sim<- 10
-
-masterSim<- function(min=-5, max=5, sim=10, vals){
+masterSim<- function(min=0, max=7, vals){
+  n<- 100 #number of voters
+  vals<- matrix(rnorm(2*n, mean=4, sd=2), nrow=n, ncol=2) #standard draw
   #Party 1 and 2 starts by choosing a random position between 0 and 7 on 2 dimensional policy scale
+  sim<- 5 #number of iterations
   P1start <- runif(2, min, max)
   P2start <- runif(2, min, max)
   #By the loop below, parties adjust their position according to their mean voter in previous elections and voters vote accordingly
@@ -218,12 +217,78 @@ masterSim<- function(min=-5, max=5, sim=10, vals){
 ## 5) Visualization of this process (which we will find helpful and FUN)
 #Elif: I did this as a seperate question not to slow down the simulation function in 4, but we can move this into the function above if you like.
 
-#To follow how parties changed their positions in time during the iterations
+#To follow how parties changed their positions in time during the iterations, while voters have stable preferences
 
-for (i in 1:sim){
-plot(P1[i,1], P1[i,2], xlab="Preference X1", ylab="Preference X2", ylim=c(min,max), xlim=c(min,max), type="p", pch=24, col="blue", main="Policy Preferences")   
-points(P2[i,1], P2[i,2], col="red", pch=24)
+for (i in 1:nrow(P1)){
+  P1<- masterSim()$P1
+  P2<- masterSim()$P2
+plot(vals, xlab="Preference X1", ylab="Preference X2", ylim=c(min,max), xlim=c(min,max), type="p", main="Policy Preferences", pch=1)
+points(P1[i,1], P1[i,2], col="blue", pch=17)   
+points(P2[i,1], P2[i,2], col="red", pch=17)
 }
 
-#Elif: It would be also interesting to see the voters who changed their party preferences within this process but I couldn't think of a good way for this
-#I agree
+### Part III: Explore Your Model ###
+
+## 1 & 2) Alter your function so it takes 
+#'@param draw for choosing the distribution of voters
+#'@param rseed for setting a random seed
+#'@param sim as number of total iterations
+#'as inputs
+#'Output should be the vector of positions the parties take throughout the sim
+
+masterSim2<- function(min=0, max=7, sim=5, draw="standard", n=100, rseed=25){
+  set.seed(rseed)
+  vals<- voterPref(draw=draw, n=n)
+  #Party 1 and 2 starts by choosing a random position between 0 and 7 on 2 dimensional policy scale
+  P1start <- runif(2, min, max)
+  P2start <- runif(2, min, max)
+  #By the loop below, parties adjust their position according to their mean voter in previous elections and voters vote accordingly
+  P1<- P1start #matrix to store the evolution of P1's position
+  P2<- P2start #matrix to store the evolution of P2's position
+  for (i in 1:sim){
+    #Voters cast their ballot to closest party by calculating distance
+    P1dist <- pdist(X=vals, Y=P1start)
+    P2dist <- pdist(X=vals, Y=P2start)
+    PreferP1 <- P1dist@dist  < P2dist@dist #Returns True when distance to P1 is smaller
+    Party <- ifelse(PreferP1, "P1", "P2")
+    #Parties relocate themselves
+    P1start <- aaply(.data=vals[Party=="P1",], .margins=2, .fun= mean) #Party 1 position  
+    P2start <- aaply(.data=vals[Party=="P2",], .margins=2, .fun= mean) #Party 2 position
+    P1<- rbind(P1, P1start) #P1's position shift in time
+    P2<- rbind(P2, P2start) #P2's position shift in time
+  } #End loop
+  return(list("P1"=P1, "P2"=P2, "vals"=vals))
+} #End master simulation function 2
+## masterSim2() returns some Nan in matrices/check why
+
+
+## 3) Use expand.grid() function to set up a data frame 
+require(utils)
+library('doMC')
+library('multicore')
+library('foreach')
+dfParam<- expand.grid(draw=c("standard", "uniquevari", "uniform", "multivariate", "mixture"), sim=c(10:100), rseed=c(1:100), stringsAsFactors=FALSE)
+str(dfParam)
+registerDoMC(cores=8) 
+out2 <- aaply(.data=dfParam, .margins=1, .fun=masterSim2, .parallel=TRUE)
+
+
+## 4) Use plots to compare some comparative static of interest
+#'@param sim as the number of iterations
+#'@param draw for different methods to generate voters
+#'@param rseed for setting random seed
+# Elif: Here I used two different draw types to compare. But we can use other parameters you would like as well.
+
+Plot1<- masterSim2(draw="standard")
+Plot2<- masterSim2(draw="uniform")
+par(mfrow=c(1,2))
+for (i in 1:nrow(P1)){
+  plot(vals, xlab="Preference X1", ylab="Preference X2", ylim=c(min,max), xlim=c(min,max), type="p", main="Standard Draw", pch=1)
+  points(Plot1$P1[i,1], Plot1$P1[i,2], col="blue", pch=17)   
+  points(Plot1$P2[i,1], Plot1$P2[i,2], col="red", pch=17)
+  plot(vals, xlab="Preference X1", ylab="Preference X2", ylim=c(min,max), xlim=c(min,max), type="p", main="Univariate Draw", pch=1)
+  points(Plot2$P1[i,1], Plot2$P1[i,2], col="blue", pch=17)   
+  points(Plot2$P2[i,1], Plot2$P2[i,2], col="red", pch=17)
+}
+
+
