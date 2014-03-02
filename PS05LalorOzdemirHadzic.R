@@ -323,6 +323,7 @@ Mult_Parties <- function(min=0, max=7, rseed=7, draw="uniform", n=20, nparty=10)
   } #Creates a matrix called Prefmatrix which rows denoting the parties and columns voters. The cells represent the
   #distances between a particular party and voter.
   
+  Prefer <- character()
   for(i in 1:nrow(vals)){
     Prefer[i] <- which(Prefmatrix[,i] == min(Prefmatrix[,i]))
     PartyPrefer <- as.numeric(Prefer)
