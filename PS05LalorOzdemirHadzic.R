@@ -376,3 +376,44 @@ masterSim3<- function(min=0, max=7, sim=5, draw="standard", n=100, rseed=25){
 #fact that a party both gains and loses votes when "probabilistic" voting is introduced.  Ultimately, any policy 
 #preference changes parties make while permitting for such voting is minor.
 
+#3. Add at least one heuristic to the model. How does that change thhe behavior of the model?
+
+#We will be adding a heuristic that permits a party that receives fewer votes in an election against another party to adopt policy
+#preferences closer to the party that prevailed in the election.  To do this, we will alter the function from the previous question, 
+#masterSim3, and create a new function called masterSim4. The parameters are the same. The only changes are the if statements located
+#in the middle of the function, which move the losing party closer to the policy preferences of the winning party.
+
+masterSim4<- function(min=0, max=7, sim=5, draw="standard",n=100, rseed=25){
+  set.seed(rseed)
+  vals<- voterPref(draw=draw, n=n)
+  P1start <- runif(2, min, max)
+  P2start <- runif(2, min, max)
+  for (i in 1:sim){
+    P1dist <- pdist(X=vals, Y=P1start)
+    P2dist <- pdist(X=vals, Y=P2start)
+    PreferP1 <- P1dist@dist  < P2dist@dist
+    Party <- ifelse(PreferP1, "P1", "P2")
+    
+    if(length(which(Party == "P1")) > length(which(Party == "P2"))){ #In case party 1 receives more votes, party 2 moves closer to the policy
+      #preferences of the winning party 1.
+      P2dist@dist <- (P1dist@dist + P2dist@dist)/2 
+    }
+    
+    if(length(which(Party == "P2")) > length(which(Party == "P1"))){ #In case party 2 receives more votes, party 1 moves closer to the policy
+      #preferences of the winning party 2.
+      P1dist@dist <- (P1dist@dist + P2dist@dist)/2
+    }
+  }
+  for(i in 1:sim){
+    PreferP1 <- P1dist@dist  < P2dist@dist
+    Party <- ifelse(PreferP1, "P1", "P2")
+    P1start <- aaply(.data=vals[Party=="P1",], .margins=2, .fun= mean) 
+    P2start <- aaply(.data=vals[Party=="P2",], .margins=2, .fun= mean) 
+    P1 <- rbind(P1, P1start) 
+    P2 <- rbind(P2, P2start) 
+  } 
+  return(list("P1"=P1, "P2"=P2, "vals"=vals))
+} 
+
+#By adding the heuristic described above, the parties settle on policy preferences faster than if we exclude the heuristic. Also,
+#the distance in policy preferences between the two parties decreases somewhat.
