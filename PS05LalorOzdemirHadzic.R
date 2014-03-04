@@ -1,4 +1,4 @@
-##Maggie Lalor
+##Dino Hadzic, Maggie Lalor, and Elif Ozdemir
 ##PS4625 Applied Statistical Programming Spring 2014
 ##Problem Set 05 Due 03/04/2014
 
@@ -7,7 +7,6 @@ rm(list=ls()) #after cleaning space
 set.seed(25)
 library(MASS) #contains mvnorm
 library(plyr)
-library()
 #install.packages("pdist") #if you didn't install before
 library(pdist)
 
@@ -27,18 +26,15 @@ library(pdist)
 #'@param mu is the optional length 3 vector of means when drawing from 3 multivariate distributions
 #'@return returns a 2 by n matrix where each row is a simulated voter, and the columns are the two policy dimensions
 #'
-#'@author Margaret Lalor
+#'@author Dino Hadzic, Maggie Lalor, and Elif Ozdemir
 
 ##Values for testing function as it's being written
 n <- 25
 var <- c(4,9)
 min=0
 max=7
-#Elif: Changed all min/max values to (0,7) for ideological scales of parties, so we will have consistency. We may need to make changes in the voterPref function to have consistency with voter preferences as well. For example standard draw always have a sample between (0,1) as it is now.
 
-#Dino: Revising code for "multivariate" and "mixture" draws so that n x 2 matrix is created by function.
-
-voterPref<- function(draw, cov=0, var=0, n, min=0, max=7, mu=0){ #variance is 2 vector, cov is variance-cov matrix
+voterPref<- function(draw, n, cov=0, var=0, n, min=0, max=7, mu=0){ #variance is 2 vector, cov is variance-cov matrix
 
   #matrix of NAs to store preferences
   vals <- matrix(nrow=n, ncol=2)
@@ -46,12 +42,12 @@ voterPref<- function(draw, cov=0, var=0, n, min=0, max=7, mu=0){ #variance is 2 
   #x1, x2 are the two dimensions for a given voter's policy preferences
   if(draw=="standard"){
   #draw independently from standard normal distributions
-    vals<- matrix(rnorm(2*n, mean=4, sd=2), nrow=n, ncol=2)
+    vals<- matrix(rnorm(2*n, mean=0, sd=1), nrow=n, ncol=2) #defaults, but reminder that standard normal
   }
       
   #draw independently from normal distributions where each variance is set separately
   if(draw=="uniquevari" & var !=0) {
-    vals<- cbind(rnorm(n,sd = sqrt(var[1])), rnorm(n,sd = sqrt(var[2])))
+    vals<- cbind(rnorm(n, mean=0, sd = sqrt(var[1])), rnorm(n,sd = sqrt(var[2])))
   }
 
   #draw from uniform
@@ -74,12 +70,15 @@ voterPref<- function(draw, cov=0, var=0, n, min=0, max=7, mu=0){ #variance is 2 
   return(vals)
 }
 
+# example of running function
+vals <- voterPref(draw="uniform", n=5, cov=0, var=0, n, min=0, max=7)
+vals <- voterPref(draw="standard", n=25)
+
+
 #random values for 2 parties
 party1<- runif(2, min=-5, max=5)
 party2<- runif(2, min=-5, max=5)
 
-
-### NOTES: REWRITE FUNCTION TO ATTACH AS ANOTHER COLUMN IN VALS ###
 ## 3) 
 
 #'Function that returns "P1" if voter is closer to party1, "P2" if party2
@@ -89,7 +88,8 @@ party2<- runif(2, min=-5, max=5)
 #'@return returns an n length vector where the ith value is "P1" if the euclidian distance
 #'from the ith voter to Party 1 is smaller than the distance to Party 2, and "P2" otherwise
 #'
-#'@author Margaret Lalor
+#'@author Dino Hadzic, Maggie Lalor, and Elif Ozdemir
+
 partyAffil<- function(party1, party2, vals){
   
   # calculate distances, find smaller, associate with that party
@@ -112,27 +112,30 @@ Party <- partyAffil(party1,party2, vals)
 #'@return returns a pdf image of voters' preferences, red for Party 1, blue Party 2,
 #'with labels dots for the positions of the parties themselves
 #'
-#'@author Margaret Lalor
+#'@author Dino Hadzic, Maggie Lalor, and Elif Ozdemir
 
 #Dino: changing xlim and ylim for visualprefs to c(-6,8). Othewise, when we plot positions, the parties will
 #occassionally not appear on the graph. 8 is the uppper bound since when drawing from uniform distribution for voters, 
 #7 is the maximum value.
+#Had to tried to make it the min and max relative to range of voter prefs
 
 visualprefs <- function(party1, party2, vals, Party) {
-P1 <- vals[Party=="P1",] #Subset the dataset by closest party
-P2 <- as.matrix(vals[Party=="P2",], ncol=2)
+  P1 <- vals[Party=="P1",] #Subset the dataset by closest party
+  P2 <- as.matrix(vals[Party=="P2",], ncol=2)
 
-#positions of the voters and their affiliation (graph) - b) and c)
-plot(P1[,1], P1[,2], xlab="Preference X1", ylab="Preference X2", ylim=c(-6, 8), xlim=c(-6, 8), type="p", pch=24, col="blue", main="Policy Preferences") 
-points(P2[,1], P2[,2], col="red", pch=24) #Voters
+  #positions of the voters and their affiliation (graph) - b) and c)
+  plot(P1[,1], P1[,2], xlab="Preference X1", ylab="Preference X2", ylim=c(-6, 8), xlim=c(-6, 8), type="p", pch=24, col="blue", main="Policy Preferences") 
+  points(P2[,1], P2[,2], col="red", pch=24) #Voters
   
-#positions of the parties (add points and label) - a)
-points(t(party1), col="blue") #if not transposed get two points
-text(t(party1), "Party 1", pos=4, cex=0.6) #4 is to right
-points(t(party2), col="red")
-text(t(party2), "Party 2", pos=4, cex=0.6) #4 is to right
+  #positions of the parties (add points and label) - a)
+  points(t(party1), col="blue") #if not transposed get two points
+  text(t(party1), "Party 1", pos=4, cex=0.6) #4 is to right
+  points(t(party2), col="red")
+  text(t(party2), "Party 2", pos=4, cex=0.6) #4 is to right
 
 } #End image function
+
+visualprefs(party1, party2, vals, Party)
 
 
 ### Part II: Getting Things Moving ###
@@ -142,9 +145,8 @@ text(t(party2), "Party 2", pos=4, cex=0.6) #4 is to right
 #voters who affiliated with them in period t − 1.
 
 ##Maggie comment: I assume this means we figure out how to find new party positions:
-
+#This can also be done all at once
 P1 <- aaply(.data=vals[Party=="P1",], .margins=2, .fun= mean) #Party 1 position
-
 P2 <- aaply(.data=vals[Party=="P2",], .margins=2, .fun= mean) #Party 2 position
 
 
@@ -153,12 +155,15 @@ P2 <- aaply(.data=vals[Party=="P2",], .margins=2, .fun= mean) #Party 2 position
 #'@param max is the maximum value of a policy preference, default 7
 #'@return returns a two item list with the positions for two parties
 #'
-#'@author Margaret Lalor
+#'@author Dino Hadzic, Maggie Lalor, and Elif Ozdemir
+
 PartyStart <- function(min=0, max=7){ #min and max for party positions
   P1start <- runif(2, min, max)
   P2start <- runif(2, min, max)
   return(list("P1start"=P1start, "P2start"=P2start))
 } #returns starting positions as list
+
+start <- PartyStart()
 
 
 ## 3) Write a function that “re-locates” the parties according to this heuristic.
@@ -169,15 +174,17 @@ PartyStart <- function(min=0, max=7){ #min and max for party positions
 #'"P2" for this with party 2
 #'@return returns a two item list with the positions for two parties
 #'
-#'@author Margaret Lalor
+#'@author Dino Hadzic, Maggie Lalor, and Elif Ozdemir
 
 RelocateParty <- function(vals, Party) {
   #Calulate Party Positions
-  P1 <- aaply(.data=vals[Party=="P1",], .margins=2, .fun= mean) #Party 1 position  
-  P2 <- aaply(.data=vals[Party=="P2",], .margins=2, .fun= mean) #Party 2 position
+  P1start <- aaply(.data=vals[Party=="P1",], .margins=2, .fun= mean) #Party 1 position  
+  P2start <- aaply(.data=vals[Party=="P2",], .margins=2, .fun= mean) #Party 2 position
   
   return(list("P1start"=P1start, "P2start"=P2start))
 }
+
+Relocate <- RelocateParty(vals=vals, Party=Party)
 
 
 ## 4) Write a “master” function that runs the simulation.
@@ -199,23 +206,23 @@ masterSim<- function(min=0, max=7, vals){
   P2<- P2start #matrix to store the evolution of P2's position
   PartyAff<- NULL #matrix to store the evolution of voter preferences
   for (i in 1:sim){
-  #Voters cast their ballot to closest party by calculating distance
-  P1dist <- pdist(X=vals, Y=P1start)
-  P2dist <- pdist(X=vals, Y=P2start)
-  PreferP1 <- P1dist@dist  < P2dist@dist #Returns True when distance to P1 is smaller
-  Party <- ifelse(PreferP1, "P1", "P2")
-  #Parties relocate themselves
-  P1start <- aaply(.data=vals[Party=="P1",], .margins=2, .fun= mean) #Party 1 position  
-  P2start <- aaply(.data=vals[Party=="P2",], .margins=2, .fun= mean) #Party 2 position
-  P1<- rbind(P1, P1start) #P1's position shift in time
-  P2<- rbind(P2, P2start) #P2's position shift in time
-  PartyAff<- cbind(PartyAff, Party) #Change in voter prefereces in time
+    #Voters cast their ballot to closest party by calculating distance
+    P1dist <- pdist(X=vals, Y=P1start)
+    P2dist <- pdist(X=vals, Y=P2start)
+    PreferP1 <- P1dist@dist  < P2dist@dist #Returns True when distance to P1 is smaller
+    Party <- ifelse(PreferP1, "P1", "P2")
+    #Parties relocate themselves
+    P1start <- aaply(.data=vals[Party=="P1",], .margins=2, .fun= mean) #Party 1 position  
+    P2start <- aaply(.data=vals[Party=="P2",], .margins=2, .fun= mean) #Party 2 position
+    P1<- rbind(P1, P1start) #P1's position shift in time
+    P2<- rbind(P2, P2start) #P2's position shift in time
+    PartyAff<- cbind(PartyAff, Party) #Change in voter prefereces in time
   } #End loop
   return(list("P1"=P1, "P2"=P2, "PartyAff"=PartyAff))
 } #End master simulation function
 
 ## 5) Visualization of this process (which we will find helpful and FUN)
-#Elif: I did this as a seperate question not to slow down the simulation function in 4, but we can move this into the function above if you like.
+#Elif: I did this as a seperate question not to slow down the simulation function in 4
 
 #To follow how parties changed their positions in time during the iterations, while voters have stable preferences
 
@@ -245,6 +252,7 @@ masterSim2<- function(min=0, max=7, sim=5, draw="standard", n=100, rseed=25){
   #By the loop below, parties adjust their position according to their mean voter in previous elections and voters vote accordingly
   P1<- P1start #matrix to store the evolution of P1's position
   P2<- P2start #matrix to store the evolution of P2's position
+  
   for (i in 1:sim){
     #Voters cast their ballot to closest party by calculating distance
     P1dist <- pdist(X=vals, Y=P1start)
@@ -256,10 +264,11 @@ masterSim2<- function(min=0, max=7, sim=5, draw="standard", n=100, rseed=25){
     P2start <- aaply(.data=vals[Party=="P2",], .margins=2, .fun= mean) #Party 2 position
     P1<- rbind(P1, P1start) #P1's position shift in time
     P2<- rbind(P2, P2start) #P2's position shift in time
-  } #End loop
+  } #End for loop
+  
   return(list("P1"=P1, "P2"=P2, "vals"=vals))
 } #End master simulation function 2
-## masterSim2() returns some Nan in matrices/check why
+ masterSim2() #returns some Nan in matrices/check why
 
 
 ## 3) Use expand.grid() function to set up a data frame 
@@ -268,8 +277,8 @@ library('doMC')
 library('multicore')
 library('foreach')
 dfParam<- expand.grid(draw=c("standard", "uniquevari", "uniform", "multivariate", "mixture"), sim=c(10:100), rseed=c(1:100), stringsAsFactors=FALSE)
-str(dfParam)
-registerDoMC(cores=8) 
+# str(dfParam)
+registerDoMC(cores=4) 
 out2 <- aaply(.data=dfParam, .margins=1, .fun=masterSim2, .parallel=TRUE)
 
 
@@ -277,7 +286,7 @@ out2 <- aaply(.data=dfParam, .margins=1, .fun=masterSim2, .parallel=TRUE)
 #'@param sim as the number of iterations
 #'@param draw for different methods to generate voters
 #'@param rseed for setting random seed
-# Elif: Here I used two different draw types to compare. But we can use other parameters you would like as well.
+# Elif: Here I used two different draw types to compare.
 
 Plot1<- masterSim2(draw="standard")
 Plot2<- masterSim2(draw="uniform")
