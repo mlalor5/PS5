@@ -34,7 +34,7 @@ var <- c(4,9)
 min=0
 max=7
 
-voterPref<- function(draw, n, cov=0, var=0, n, min=0, max=7, mu=0){ #variance is 2 vector, cov is variance-cov matrix
+voterPref<- function(draw, n, cov=0, var=0, min=0, max=7, mu=0){ #variance is 2 vector, cov is variance-cov matrix
 
   #matrix of NAs to store preferences
   vals <- matrix(nrow=n, ncol=2)
@@ -71,7 +71,7 @@ voterPref<- function(draw, n, cov=0, var=0, n, min=0, max=7, mu=0){ #variance is
 }
 
 # example of running function
-vals <- voterPref(draw="uniform", n=5, cov=0, var=0, n, min=0, max=7)
+vals <- voterPref(draw="uniform", n=5, cov=0, var=0, min=0, max=7)
 vals <- voterPref(draw="standard", n=25)
 
 
